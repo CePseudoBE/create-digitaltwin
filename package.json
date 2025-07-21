@@ -1,6 +1,6 @@
 {
   "name": "create-digitaltwin",
-  "version": "0.2.0",
+  "version": "0.2.2",
   "description": "Create digital twin app within a command with templates, env etc.",
   "license": "MIT",
   "author": "Hoffmann Axel",
@@ -41,15 +41,15 @@
   },
   "dependencies": {
     "prompts": "^2.4.2",
-    "chalk": "^5.3.0",
-    "fs-extra": "^11.2.0",
-    "commander": "^12.0.0"
+    "chalk": "^5.4.1",
+    "fs-extra": "^11.3.0",
+    "commander": "^12.1.0"
   },
   "devDependencies": {
-    "@types/node": "^22.0.0",
+    "@types/node": "^22.16.0",
     "@types/prompts": "^2.4.9",
     "@types/fs-extra": "^11.0.4",
-    "typescript": "^5.5.0",
-    "tsx": "^4.16.0"
+    "typescript": "^5.8.0",
+    "tsx": "^4.20.0"
   }
 }
