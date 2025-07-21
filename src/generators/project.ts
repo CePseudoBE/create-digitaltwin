@@ -55,8 +55,7 @@ async function generatePackageJson(projectPath: string, answers: ProjectAnswers)
   const devDependencies: PackageJsonDependencies = {
     '@types/node': '^24.0.10',
     'typescript': '^5.0.0',
-    'ts-node': '^10.9.0',
-    'nodemon': '^3.0.0'
+    'ts-node-dev' : '^2.0.0'
   }
   
   // Add database-specific dependencies
@@ -85,7 +84,7 @@ async function generatePackageJson(projectPath: string, answers: ProjectAnswers)
     type: 'module',
     scripts: {
       build: 'tsc',
-      dev: 'nodemon --exec ts-node --esm src/index.ts',
+      dev: 'ts-node-dev src/index.ts',
       start: 'node dist/index.js',
       'dt:test': 'ts-node --esm src/dt-cli.ts test',
       'dt:dev': 'ts-node --esm src/dt-cli.ts dev'
