@@ -28,6 +28,14 @@
     "template",
     "scaffold"
   ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/CePseudoBE/create-digitaltwin"
+  },
+  "bugs": {
+    "url": "https://github.com/CePseudoBE/create-digitaltwin/issues"
+  },
+  "homepage": "https://github.com/CePseudoBE/create-digitaltwin#readme",
   "engines": {
     "node": ">=18.0.0"
   },
