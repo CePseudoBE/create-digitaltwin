@@ -64,7 +64,7 @@ async function generatePackageJson(projectPath: string, answers: ProjectAnswers)
     dependencies.pg = '^8.11.0'
     devDependencies['@types/pg'] = '^8.10.0'
   } else {
-    dependencies['better-sqlite3'] = '^9.0.0'
+    dependencies['sqlite3'] = '^5.1.7'
   }
   
   // Add Redis if requested
