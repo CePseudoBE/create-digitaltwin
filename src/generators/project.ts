@@ -116,7 +116,7 @@ function generateIndexFile(answers: ProjectAnswers): string {
 
     const storageClass = storage === 'local' ? 'LocalStorageService' : 'OvhS3StorageService'
     const exampleImports = includeExamples
-        ? "import { JSONPlaceholderCollector, DataProcessor } from './components/index.js'"
+        ? "import { JSONPlaceholderCollector } from './components/index.js'"
         : ''
 
     const dbConfigSection = database === 'postgresql'
@@ -178,8 +178,7 @@ function generateIndexFile(answers: ProjectAnswers): string {
   }`
 
     const exampleComponents = includeExamples
-        ? `collectors: [new JSONPlaceholderCollector()],
-    handlers: [new DataProcessor()],`
+        ? `collectors: [new JSONPlaceholderCollector()],`
         : ''
 
     const storageDisplay = storage === 'local'
