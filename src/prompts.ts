@@ -2,6 +2,20 @@ import prompts, { PromptObject } from 'prompts'
 import path from 'path'
 import type { ProjectAnswers } from './types/index.js'
 
+/**
+ * Collects user input for Digital Twin project configuration.
+ * Prompts for project name, database, storage, and feature options.
+ * 
+ * @param initialProjectName - Optional initial project name
+ * @returns Promise resolving to user's configuration choices
+ * 
+ * @example
+ * ```typescript
+ * const answers = await getProjectPrompts('my-digitaltwin')
+ * console.log(answers.projectName) // 'my-digitaltwin'
+ * console.log(answers.database)    // 'sqlite' or 'postgresql'
+ * ```
+ */
 export async function getProjectPrompts(initialProjectName?: string): Promise<ProjectAnswers> {
   const questions: PromptObject[] = [
     {

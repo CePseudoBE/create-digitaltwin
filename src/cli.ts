@@ -6,6 +6,17 @@ import type { ProjectAnswers } from './types/index.js'
 
 const program = new Command()
 
+/**
+ * Main CLI function to create a Digital Twin application.
+ * Handles user prompts and orchestrates project generation.
+ * 
+ * @example
+ * ```bash
+ * npx create-digitaltwin
+ * npx create-digitaltwin my-app
+ * npm init digitaltwin my-project
+ * ```
+ */
 export async function createDigitalTwinApp(): Promise<void> {
   console.log(chalk.blue.bold('🔷 Create Digital Twin App'))
   console.log(chalk.gray('Generate a new Digital Twin project with digitaltwin-core\n'))

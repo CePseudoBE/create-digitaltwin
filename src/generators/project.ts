@@ -7,6 +7,26 @@ import type {PackageJsonConfig, PackageJsonDependencies, ProjectAnswers,} from '
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 
+/**
+ * Generates a complete Digital Twin project based on user answers.
+ * Creates all necessary files including package.json, TypeScript config,
+ * application code, configuration files, and optional features.
+ * 
+ * @param answers - User configuration choices from prompts
+ * 
+ * @example
+ * ```typescript
+ * await generateProject({
+ *   projectName: 'my-app',
+ *   projectPath: '/path/to/my-app',
+ *   database: 'sqlite',
+ *   storage: 'local',
+ *   useRedis: true,
+ *   includeDocker: false,
+ *   includeExamples: true
+ * })
+ * ```
+ */
 export async function generateProject(answers: ProjectAnswers): Promise<void> {
     const {projectPath} = answers
 
@@ -38,6 +58,14 @@ export async function generateProject(answers: ProjectAnswers): Promise<void> {
     await generateReadme(projectPath, answers)
 }
 
+/**
+ * Generates package.json with appropriate dependencies based on user choices.
+ * Includes database-specific packages, Redis support, and storage adapters.
+ * 
+ * @param projectPath - Target directory for the project
+ * @param answers - User configuration choices
+ * @private
+ */
 async function generatePackageJson(projectPath: string, answers: ProjectAnswers): Promise<void> {
     const {projectName, database, storage, useRedis} = answers
 
@@ -94,6 +122,14 @@ async function generatePackageJson(projectPath: string, answers: ProjectAnswers)
     await fs.writeJson(path.join(projectPath, 'package.json'), packageJson, {spaces: 2})
 }
 
+/**
+ * Generates main application files including index.ts, CLI tool, and TypeScript config.
+ * Creates the core structure for a Digital Twin application.
+ * 
+ * @param projectPath - Target directory for the project
+ * @param answers - User configuration choices
+ * @private
+ */
 async function generateAppFiles(projectPath: string, answers: ProjectAnswers): Promise<void> {
     const srcDir = path.join(projectPath, 'src')
     await fs.ensureDir(srcDir)
@@ -111,6 +147,14 @@ async function generateAppFiles(projectPath: string, answers: ProjectAnswers): P
     await fs.writeFile(path.join(projectPath, 'tsconfig.json'), tsconfigContent)
 }
 
+/**
+ * Generates the main index.ts file with environment validation and engine setup.
+ * Includes database configuration, storage setup, and example components if requested.
+ * 
+ * @param answers - User configuration choices
+ * @returns Generated TypeScript code as string
+ * @private
+ */
 function generateIndexFile(answers: ProjectAnswers): string {
     const {projectName, database, storage, useRedis, includeExamples, localStoragePath} = answers
 
@@ -247,6 +291,14 @@ main().catch((error: Error) => {
 `
 }
 
+/**
+ * Generates the CLI tool (dt-cli.ts) for development commands.
+ * Provides 'test' and 'dev' commands for dry-run validation and development server.
+ * 
+ * @param answers - User configuration choices
+ * @returns Generated TypeScript code as string
+ * @private
+ */
 function generateCliFile(answers: ProjectAnswers): string {
     const {projectName, database, storage, useRedis, localStoragePath} = answers
 
@@ -390,6 +442,13 @@ program.parse()
 `
 }
 
+/**
+ * Generates TypeScript configuration file (tsconfig.json) with ES2022 target.
+ * Configured for ESNext modules with strict type checking enabled.
+ * 
+ * @returns JSON string for tsconfig.json
+ * @private
+ */
 function generateTsConfig(): string {
     const config = {
         compilerOptions: {
@@ -413,6 +472,14 @@ function generateTsConfig(): string {
     return JSON.stringify(config, null, 2)
 }
 
+/**
+ * Generates configuration files including .env and .gitignore.
+ * Creates environment variable templates and Git ignore rules.
+ * 
+ * @param projectPath - Target directory for the project
+ * @param answers - User configuration choices
+ * @private
+ */
 async function generateConfigFiles(projectPath: string, answers: ProjectAnswers): Promise<void> {
     // Generate .env file
     const envContent = generateEnvFile(answers)
@@ -430,6 +497,14 @@ data/
     await fs.writeFile(path.join(projectPath, '.gitignore'), gitignoreContent)
 }
 
+/**
+ * Generates .env file with environment variables based on selected configuration.
+ * Includes database settings, storage paths, Redis config, and development options.
+ * 
+ * @param answers - User configuration choices
+ * @returns Environment file content as string
+ * @private
+ */
 function generateEnvFile(answers: ProjectAnswers): string {
     const {projectName, database, storage, useRedis, localStoragePath} = answers
 
@@ -494,6 +569,14 @@ LOG_LEVEL=info
     return envContent
 }
 
+/**
+ * Generates example components including JSONPlaceholder collector.
+ * Creates a complete working example that demonstrates data collection from external APIs.
+ * 
+ * @param projectPath - Target directory for the project
+ * @param answers - User configuration choices
+ * @private
+ */
 async function generateExampleComponents(projectPath: string, answers: ProjectAnswers): Promise<void> {
     const componentsDir = path.join(projectPath, 'src', 'components')
     await fs.ensureDir(componentsDir)
@@ -502,45 +585,45 @@ async function generateExampleComponents(projectPath: string, answers: ProjectAn
     const collectorContent = `import { Collector } from 'digitaltwin-core'
 
 interface Post {
-  number
-  number
-  string
-  string
+  id: number
+  userId: number
+  title: string
+  body: string
 }
 
 interface User {
-  number
-  string
-  string
-  string
-  string
-  string
-  {
-    string
-    string
-    string
-  }
-  {
-    string
-    string
-    string
-    string
-    {
-      string
-      string
+  id: number
+  name: string
+  username: string
+  email: string
+  phone: string
+  website: string
+  address: {
+    street: string
+    suite: string
+    city: string
+    zipcode: string
+    geo: {
+      lat: string
+      lng: string
     }
+  }
+  company: {
+    name: string
+    catchPhrase: string
+    bs: string
   }
 }
 
 interface CollectedData {
-  Date
-  'jsonplaceholder'
-  Post[]
-  User[]
-  {
-    number
-    number
-    number
+  timestamp: Date
+  source: 'jsonplaceholder'
+  posts: Post[]
+  users: User[]
+  metadata: {
+    postsCount: number
+    usersCount: number
+    collectionDuration: number
   }
 }
 
@@ -633,6 +716,14 @@ export class JSONPlaceholderCollector extends Collector {
     await fs.writeFile(path.join(componentsDir, 'index.ts'), indexContent)
 }
 
+/**
+ * Generates Docker configuration files including Dockerfile and docker-compose.yml.
+ * Sets up containerized environment with appropriate services based on user choices.
+ * 
+ * @param projectPath - Target directory for the project
+ * @param answers - User configuration choices
+ * @private
+ */
 async function generateDockerFiles(projectPath: string, answers: ProjectAnswers): Promise<void> {
     const {database, useRedis, projectName} = answers
 
@@ -705,6 +796,14 @@ volumes:
     await fs.writeFile(path.join(projectPath, 'docker-compose.yml'), dockerComposeContent)
 }
 
+/**
+ * Generates comprehensive README.md with project-specific setup instructions.
+ * Includes features overview, configuration details, and getting started guide.
+ * 
+ * @param projectPath - Target directory for the project
+ * @param answers - User configuration choices
+ * @private
+ */
 async function generateReadme(projectPath: string, answers: ProjectAnswers): Promise<void> {
     const {projectName, database, storage, useRedis, includeDocker, includeExamples, localStoragePath} = answers
 

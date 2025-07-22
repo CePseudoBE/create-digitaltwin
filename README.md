@@ -14,12 +14,28 @@ TypeScript CLI tool to create Digital Twin applications with [digitaltwin-core](
 
 ## Quick Start
 
-### Via npx (Recommended)
+### Via npm init (Recommended)
+```bash
+npm init digitaltwin my-digital-twin
+cd my-digital-twin
+npm install
+npm run dev
+```
+
+### Via npx
 ```bash
 npx create-digitaltwin my-digital-twin
 cd my-digital-twin
 npm install
 npm run dev
+```
+
+### Via yarn create
+```bash
+yarn create digitaltwin my-digital-twin
+cd my-digital-twin
+yarn install
+yarn dev
 ```
 
 ### Via Global Installation
@@ -36,6 +52,8 @@ create-digitaltwin [project-name]
 
 The CLI will guide you through configuration options:
 
+> **Note:** You can use `npm init digitaltwin` as a shorthand for `npx create-digitaltwin` thanks to npm's init command aliasing.
+
 - **Project Name**: Name for your Digital Twin application
 - **Database**: SQLite (file-based) or PostgreSQL (production-ready)  
 - **Storage**: Local filesystem or OVH Object Storage (S3-compatible)
@@ -51,8 +69,7 @@ my-digital-twin/
 │   ├── index.ts                 # Main application entry
 │   ├── dt-cli.ts               # CLI commands (test, dev)
 │   └── components/             # Example components (optional)
-│       ├── random-data-collector.ts
-│       ├── data-processor.ts
+│       ├── jsonplaceholder_collector.ts
 │       └── index.ts
 ├── package.json                # Dependencies and scripts
 ├── tsconfig.json              # TypeScript configuration
@@ -66,19 +83,17 @@ my-digital-twin/
 
 ## Example Components
 
-When enabled, the generator includes two example components:
+When enabled, the generator includes working example components:
 
-### RandomDataCollector
-- Generates realistic IoT sensor data (temperature, humidity, pressure, etc.)
-- Runs every 15 seconds with 3-7 data points per collection
-- Includes data quality simulation and device metadata
-- Stores data automatically in configured storage
+### JSONPlaceholderCollector
+- Fetches real data from the JSONPlaceholder API (posts and users)
+- Runs every 15 seconds to demonstrate scheduled data collection
+- Includes error handling and performance metrics
+- Shows how to integrate with external REST APIs
+- Stores collected data with metadata in your configured storage
 
-### DataProcessor (Handler)
-- Processes collected sensor data with analysis and alerting
-- Adds trend analysis, categorization, and reliability scoring
-- Generates alerts for temperature extremes, low battery, etc.
-- Demonstrates real-time data processing patterns
+**Generated Endpoints:**
+- `GET /api/jsonplaceholder` - Latest collected data from JSONPlaceholder
 
 ## Development
 
