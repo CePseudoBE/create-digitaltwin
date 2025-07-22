@@ -1,146 +1,141 @@
 import fs from 'fs-extra'
 import path from 'path'
 import chalk from 'chalk'
-import { fileURLToPath } from 'url'
-import type { 
-  ProjectAnswers, 
-  PackageJsonConfig, 
-  PackageJsonDependencies, 
-  TemplateData 
-} from '../types/index.js'
+import {fileURLToPath} from 'url'
+import type {PackageJsonConfig, PackageJsonDependencies, ProjectAnswers,} from '../types'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 
 export async function generateProject(answers: ProjectAnswers): Promise<void> {
-  const { projectPath } = answers
-  
-  console.log(chalk.blue(`📁 Creating project at: ${projectPath}`))
-  
-  // Create project directory
-  await fs.ensureDir(projectPath)
-  
-  // Generate package.json
-  await generatePackageJson(projectPath, answers)
-  
-  // Generate main app files
-  await generateAppFiles(projectPath, answers)
-  
-  // Generate configuration files
-  await generateConfigFiles(projectPath, answers)
-  
-  // Generate example components if requested
-  if (answers.includeExamples) {
-    await generateExampleComponents(projectPath, answers)
-  }
-  
-  // Generate Docker files if requested
-  if (answers.includeDocker) {
-    await generateDockerFiles(projectPath, answers)
-  }
-  
-  // Generate README
-  await generateReadme(projectPath, answers)
+    const {projectPath} = answers
+
+    console.log(chalk.blue(`📁 Creating project at: ${projectPath}`))
+
+    // Create project directory
+    await fs.ensureDir(projectPath)
+
+    // Generate package.json
+    await generatePackageJson(projectPath, answers)
+
+    // Generate main app files
+    await generateAppFiles(projectPath, answers)
+
+    // Generate configuration files
+    await generateConfigFiles(projectPath, answers)
+
+    // Generate example components if requested
+    if (answers.includeExamples) {
+        await generateExampleComponents(projectPath, answers)
+    }
+
+    // Generate Docker files if requested
+    if (answers.includeDocker) {
+        await generateDockerFiles(projectPath, answers)
+    }
+
+    // Generate README
+    await generateReadme(projectPath, answers)
 }
 
 async function generatePackageJson(projectPath: string, answers: ProjectAnswers): Promise<void> {
-  const { projectName, database, storage, useRedis } = answers
-  
-  const dependencies: PackageJsonDependencies = {
-    'digitaltwin-core': '^0.1.0',
-    'knex': '^3.0.0',
-    'commander': '^12.0.0'
-  }
-  
-  const devDependencies: PackageJsonDependencies = {
-    '@types/node': '^24.0.10',
-    'typescript': '^5.0.0',
-    'ts-node-dev' : '^2.0.0'
-  }
-  
-  // Add database-specific dependencies
-  if (database === 'postgresql') {
-    dependencies.pg = '^8.11.0'
-    devDependencies['@types/pg'] = '^8.10.0'
-  } else {
-    dependencies['sqlite3'] = '^5.1.7'
-  }
-  
-  // Add Redis if requested
-  if (useRedis) {
-    dependencies.ioredis = '^5.6.1'
-  }
-  
-  // Add AWS SDK if using OVH storage
-  if (storage === 'ovh') {
-    dependencies['@aws-sdk/client-s3'] = '^3.842.0'
-  }
-  
-  const packageJson: PackageJsonConfig = {
-    name: projectName,
-    version: '1.0.0',
-    description: 'Digital Twin application built with digitaltwin-core',
-    main: 'dist/index.js',
-    type: 'module',
-    scripts: {
-      build: 'tsc',
-      dev: 'ts-node-dev src/index.ts',
-      start: 'node dist/index.js',
-      'dt:test': 'ts-node --esm src/dt-cli.ts test',
-      'dt:dev': 'ts-node --esm src/dt-cli.ts dev'
-    },
-    bin: {
-      dt: './dist/dt-cli.js'
-    },
-    dependencies,
-    devDependencies
-  }
-  
-  await fs.writeJson(path.join(projectPath, 'package.json'), packageJson, { spaces: 2 })
+    const {projectName, database, storage, useRedis} = answers
+
+    const dependencies: PackageJsonDependencies = {
+        'digitaltwin-core': '^0.1.0',
+        'knex': '^3.0.0',
+        'commander': '^12.0.0'
+    }
+
+    const devDependencies: PackageJsonDependencies = {
+        '@types/node': '^24.0.10',
+        'typescript': '^5.0.0',
+        'ts-node-dev': '^2.0.0'
+    }
+
+    // Add database-specific dependencies
+    if (database === 'postgresql') {
+        dependencies.pg = '^8.11.0'
+        devDependencies['@types/pg'] = '^8.10.0'
+    } else {
+        dependencies['sqlite3'] = '^5.1.7'
+    }
+
+    // Add Redis if requested
+    if (useRedis) {
+        dependencies.ioredis = '^5.6.1'
+    }
+
+    // Add AWS SDK if using OVH storage
+    if (storage === 'ovh') {
+        dependencies['@aws-sdk/client-s3'] = '^3.842.0'
+    }
+
+    const packageJson: PackageJsonConfig = {
+        name: projectName,
+        version: '1.0.0',
+        description: 'Digital Twin application built with digitaltwin-core',
+        main: 'dist/index.js',
+        type: 'module',
+        scripts: {
+            build: 'tsc',
+            dev: 'ts-node-dev src/index.ts',
+            start: 'node dist/index.js',
+            'dt:test': 'ts-node --esm src/dt-cli.ts test',
+            'dt:dev': 'ts-node --esm src/dt-cli.ts dev'
+        },
+        bin: {
+            dt: './dist/dt-cli.js'
+        },
+        dependencies,
+        devDependencies
+    }
+
+    await fs.writeJson(path.join(projectPath, 'package.json'), packageJson, {spaces: 2})
 }
 
 async function generateAppFiles(projectPath: string, answers: ProjectAnswers): Promise<void> {
-  const srcDir = path.join(projectPath, 'src')
-  await fs.ensureDir(srcDir)
-  
-  // Generate main index.ts
-  const indexContent = generateIndexFile(answers)
-  await fs.writeFile(path.join(srcDir, 'index.ts'), indexContent)
-  
-  // Generate dt-cli.ts for commands
-  const cliContent = generateCliFile(answers)
-  await fs.writeFile(path.join(srcDir, 'dt-cli.ts'), cliContent)
-  
-  // Generate TypeScript config
-  const tsconfigContent = generateTsConfig()
-  await fs.writeFile(path.join(projectPath, 'tsconfig.json'), tsconfigContent)
+    const srcDir = path.join(projectPath, 'src')
+    await fs.ensureDir(srcDir)
+
+    // Generate main index.ts
+    const indexContent = generateIndexFile(answers)
+    await fs.writeFile(path.join(srcDir, 'index.ts'), indexContent)
+
+    // Generate dt-cli.ts for commands
+    const cliContent = generateCliFile(answers)
+    await fs.writeFile(path.join(srcDir, 'dt-cli.ts'), cliContent)
+
+    // Generate TypeScript config
+    const tsconfigContent = generateTsConfig()
+    await fs.writeFile(path.join(projectPath, 'tsconfig.json'), tsconfigContent)
 }
 
 function generateIndexFile(answers: ProjectAnswers): string {
-  const { projectName, database, storage, useRedis, includeExamples, localStoragePath } = answers
-  
-  const storageClass = storage === 'local' ? 'LocalStorageService' : 'OvhS3StorageService'
-  const exampleImports = includeExamples 
-    ? "import { RandomDataCollector, DataProcessor } from './components/index.js'" 
-    : ''
-  
-  const dbConfigSection = database === 'postgresql' 
-    ? `
+    const {projectName, database, storage, useRedis, includeExamples, localStoragePath} = answers
+
+    const storageClass = storage === 'local' ? 'LocalStorageService' : 'OvhS3StorageService'
+    const exampleImports = includeExamples
+        ? "import { RandomDataCollector, DataProcessor } from './components/index.js'"
+        : ''
+
+    const dbConfigSection = database === 'postgresql'
+        ? `
     // PostgreSQL configuration
     DB_HOST: Env.schema.string(),
     DB_PORT: Env.schema.number({ optional: true }),
     DB_USER: Env.schema.string(),
     DB_PASSWORD: Env.schema.string(),
     DB_NAME: Env.schema.string(),`
-    : `
+        : `
     // SQLite configuration
     DB_PATH: Env.schema.string({ optional: true }),`
 
-  const storageConfigSection = storage === 'local'
-    ? `
+    const storageConfigSection = storage === 'local'
+        ? `
     // Local storage configuration
     STORAGE_PATH: Env.schema.string({ optional: true }),`
-    : `
+        : `
     // OVH Object Storage configuration
     OVH_ACCESS_KEY: Env.schema.string(),
     OVH_SECRET_KEY: Env.schema.string(),
@@ -148,14 +143,14 @@ function generateIndexFile(answers: ProjectAnswers): string {
     OVH_REGION: Env.schema.string({ optional: true }),
     OVH_BUCKET: Env.schema.string(),`
 
-  const redisConfigSection = useRedis ? `
+    const redisConfigSection = useRedis ? `
     // Redis configuration  
     REDIS_HOST: Env.schema.string({ optional: true }),
     REDIS_PORT: Env.schema.number({ optional: true }),` : ''
 
-  const storageInit = storage === 'local'
-    ? `env.STORAGE_PATH || '${localStoragePath || './uploads'}'`
-    : `{
+    const storageInit = storage === 'local'
+        ? `env.STORAGE_PATH || '${localStoragePath || './uploads'}'`
+        : `{
     accessKey: env.OVH_ACCESS_KEY,
     secretKey: env.OVH_SECRET_KEY,
     endpoint: env.OVH_ENDPOINT,
@@ -163,8 +158,8 @@ function generateIndexFile(answers: ProjectAnswers): string {
     bucket: env.OVH_BUCKET
   }`
 
-  const dbConfig = database === 'postgresql'
-    ? `{
+    const dbConfig = database === 'postgresql'
+        ? `{
     client: 'pg',
     connection: {
       host: env.DB_HOST,
@@ -174,7 +169,7 @@ function generateIndexFile(answers: ProjectAnswers): string {
       database: env.DB_NAME
     }
   }`
-    : `{
+        : `{
     client: 'sqlite3',
     connection: {
       filename: env.DB_PATH || './data/${projectName}.db'
@@ -182,19 +177,19 @@ function generateIndexFile(answers: ProjectAnswers): string {
     useNullAsDefault: true
   }`
 
-  const exampleComponents = includeExamples
-    ? `collectors: [new RandomDataCollector()],
+    const exampleComponents = includeExamples
+        ? `collectors: [new RandomDataCollector()],
     handlers: [new DataProcessor()],`
-    : ''
+        : ''
 
-  const storageDisplay = storage === 'local' 
-    ? `Local filesystem (\${env.STORAGE_PATH || '${localStoragePath || './uploads'}'})` 
-    : 'OVH Object Storage'
+    const storageDisplay = storage === 'local'
+        ? `Local filesystem (\${env.STORAGE_PATH || '${localStoragePath || './uploads'}'})`
+        : 'OVH Object Storage'
 
-  const queueDisplay = useRedis ? 'Redis enabled' : 'In-memory mode'
-  const dbDisplay = database === 'postgresql' ? 'PostgreSQL' : 'SQLite'
+    const queueDisplay = useRedis ? 'Redis enabled' : 'In-memory mode'
+    const dbDisplay = database === 'postgresql' ? 'PostgreSQL' : 'SQLite'
 
-  return `import { DigitalTwinEngine, KnexDatabaseAdapter, Env } from 'digitaltwin-core'
+    return `import { DigitalTwinEngine, KnexDatabaseAdapter, Env } from 'digitaltwin-core'
 import { ${storageClass} } from 'digitaltwin-core'
 ${exampleImports}
 
@@ -221,6 +216,10 @@ async function main(): Promise<void> {
   const engine = new DigitalTwinEngine({
     database,
     storage,
+    redis: {
+      host: 'localhost',
+      port: 6379
+    },
     ${exampleComponents}
   })
   
@@ -250,14 +249,14 @@ main().catch((error: Error) => {
 }
 
 function generateCliFile(answers: ProjectAnswers): string {
-  const { projectName, database, storage, useRedis, localStoragePath } = answers
-  
-  const storageClass = storage === 'local' ? 'LocalStorageService' : 'OvhS3StorageService'
-  const dbInterface = database === 'postgresql' ? 'PostgreSQLConfig' : 'SQLiteConfig'
-  
-  const storageInit = storage === 'local'
-    ? `process.env.STORAGE_PATH || '${localStoragePath || './uploads'}'`
-    : `{
+    const {projectName, database, storage, useRedis, localStoragePath} = answers
+
+    const storageClass = storage === 'local' ? 'LocalStorageService' : 'OvhS3StorageService'
+    const dbInterface = database === 'postgresql' ? 'PostgreSQLConfig' : 'SQLiteConfig'
+
+    const storageInit = storage === 'local'
+        ? `process.env.STORAGE_PATH || '${localStoragePath || './uploads'}'`
+        : `{
     accessKey: process.env.OVH_ACCESS_KEY || '',
     secretKey: process.env.OVH_SECRET_KEY || '',
     endpoint: process.env.OVH_ENDPOINT || '',
@@ -265,8 +264,8 @@ function generateCliFile(answers: ProjectAnswers): string {
     bucket: process.env.OVH_BUCKET || '${projectName}-storage'
   }`
 
-  const dbConfig = database === 'postgresql'
-    ? `{
+    const dbConfig = database === 'postgresql'
+        ? `{
     client: 'pg',
     connection: {
       host: process.env.DB_HOST || 'localhost',
@@ -276,7 +275,7 @@ function generateCliFile(answers: ProjectAnswers): string {
       database: process.env.DB_NAME || '${projectName}'
     }
   }`
-    : `{
+        : `{
     client: 'sqlite3',
     connection: {
       filename: process.env.DB_PATH || './data/${projectName}.db'
@@ -284,7 +283,7 @@ function generateCliFile(answers: ProjectAnswers): string {
     useNullAsDefault: true
   }`
 
-  return `#!/usr/bin/env node
+    return `#!/usr/bin/env node
 
 import { DigitalTwinEngine, KnexDatabaseAdapter } from 'digitaltwin-core'
 import { ${storageClass} } from 'digitaltwin-core'
@@ -393,35 +392,35 @@ program.parse()
 }
 
 function generateTsConfig(): string {
-  const config = {
-    compilerOptions: {
-      target: 'ES2022',
-      module: 'ESNext',
-      moduleResolution: 'node',
-      allowSyntheticDefaultImports: true,
-      esModuleInterop: true,
-      allowJs: true,
-      outDir: './dist',
-      rootDir: './src',
-      strict: true,
-      declaration: true,
-      skipLibCheck: true,
-      forceConsistentCasingInFileNames: true
-    },
-    include: ['src/**/*'],
-    exclude: ['node_modules', 'dist']
-  }
-  
-  return JSON.stringify(config, null, 2)
+    const config = {
+        compilerOptions: {
+            target: 'ES2022',
+            module: 'ESNext',
+            moduleResolution: 'node',
+            allowSyntheticDefaultImports: true,
+            esModuleInterop: true,
+            allowJs: true,
+            outDir: './dist',
+            rootDir: './src',
+            strict: true,
+            declaration: true,
+            skipLibCheck: true,
+            forceConsistentCasingInFileNames: true
+        },
+        include: ['src/**/*'],
+        exclude: ['node_modules', 'dist']
+    }
+
+    return JSON.stringify(config, null, 2)
 }
 
 async function generateConfigFiles(projectPath: string, answers: ProjectAnswers): Promise<void> {
-  // Generate .env file
-  const envContent = generateEnvFile(answers)
-  await fs.writeFile(path.join(projectPath, '.env'), envContent)
-  
-  // Generate .gitignore
-  const gitignoreContent = `node_modules/
+    // Generate .env file
+    const envContent = generateEnvFile(answers)
+    await fs.writeFile(path.join(projectPath, '.env'), envContent)
+
+    // Generate .gitignore
+    const gitignoreContent = `node_modules/
 dist/
 .env
 *.log
@@ -429,13 +428,13 @@ uploads/
 data/
 .DS_Store
 `
-  await fs.writeFile(path.join(projectPath, '.gitignore'), gitignoreContent)
+    await fs.writeFile(path.join(projectPath, '.gitignore'), gitignoreContent)
 }
 
 function generateEnvFile(answers: ProjectAnswers): string {
-  const { projectName, database, storage, useRedis, localStoragePath } = answers
-  
-  let envContent = `# ${projectName} Digital Twin Configuration
+    const {projectName, database, storage, useRedis, localStoragePath} = answers
+
+    let envContent = `# ${projectName} Digital Twin Configuration
 # This file contains environment variables for your Digital Twin application
 # Copy this to .env and update the values as needed
 
@@ -444,64 +443,64 @@ PORT=3000
 
 # Database Configuration
 `
-  
-  if (database === 'postgresql') {
-    envContent += `# PostgreSQL Database (Required for production)
+
+    if (database === 'postgresql') {
+        envContent += `# PostgreSQL Database (Required for production)
 DB_HOST=localhost
 DB_PORT=5432
 DB_USER=postgres
 DB_PASSWORD=password
 DB_NAME=${projectName}
 `
-  } else {
-    envContent += `# SQLite Database (Good for development)
+    } else {
+        envContent += `# SQLite Database (Good for development)
 DB_PATH=./data/${projectName}.db
 `
-  }
-  
-  envContent += `
+    }
+
+    envContent += `
 # Storage Configuration
 `
-  
-  if (storage === 'local') {
-    envContent += `# Local File Storage
+
+    if (storage === 'local') {
+        envContent += `# Local File Storage
 STORAGE_PATH=${localStoragePath || './uploads'}
 `
-  } else {
-    envContent += `# OVH Object Storage (S3-compatible)
+    } else {
+        envContent += `# OVH Object Storage (S3-compatible)
 OVH_ACCESS_KEY=your_ovh_access_key_here
 OVH_SECRET_KEY=your_ovh_secret_key_here
 OVH_ENDPOINT=https://s3.gra.io.cloud.ovh.net
 OVH_REGION=gra
 OVH_BUCKET=${projectName}-storage
 `
-  }
-  
-  if (useRedis) {
-    envContent += `
+    }
+
+    if (useRedis) {
+        envContent += `
 # Redis Configuration (Queue Management)
 REDIS_HOST=localhost
 REDIS_PORT=6379
 `
-  }
-  
-  envContent += `
+    }
+
+    envContent += `
 # Development Configuration
 NODE_ENV=development
 
 # Logging
 LOG_LEVEL=info
 `
-  
-  return envContent
+
+    return envContent
 }
 
 async function generateExampleComponents(projectPath: string, answers: ProjectAnswers): Promise<void> {
-  const componentsDir = path.join(projectPath, 'src', 'components')
-  await fs.ensureDir(componentsDir)
-  
-  // Random Data Collector
-  const collectorContent = `import { Collector } from 'digitaltwin-core'
+    const componentsDir = path.join(projectPath, 'src', 'components')
+    await fs.ensureDir(componentsDir)
+
+    // Random Data Collector
+    const collectorContent = `import { Collector } from 'digitaltwin-core'
 
 interface SensorData {
   timestamp: Date
@@ -594,15 +593,15 @@ export class RandomDataCollector extends Collector {
   }
 }
 `
-  
-  // Data Processor Handler
-  const handlerContent = `import { Handler } from 'digitaltwin-core'
+
+    // Data Processor Handler
+    const handlerContent = `import { Handler } from 'digitaltwin-core'
 
 interface SensorData {
-  sensorId: string
-  sensorType: string
-  value: number
-  quality: 'good' | 'warning'
+  string
+  string
+  number
+  'good' | 'warning'
   metadata?: {
     batteryLevel?: number
     signalStrength?: number
@@ -610,15 +609,15 @@ interface SensorData {
 }
 
 interface ProcessedData extends SensorData {
-  processedAt: Date
-  processed: boolean
-  analysis: {
-    trend: string
-    category: string
-    reliability: string
+  Date
+  boolean
+  {
+    string
+    string
+    string
     [key: string]: any
   }
-  alerts: string[]
+  string[]
 }
 
 /**
@@ -734,22 +733,22 @@ export class DataProcessor extends Handler {
   }
 }
 `
-  
-  // Index file for components
-  const indexContent = `export { RandomDataCollector } from './random-data-collector.js'
+
+    // Index file for components
+    const indexContent = `export { RandomDataCollector } from './random-data-collector.js'
 export { DataProcessor } from './data-processor.js'
 `
-  
-  await fs.writeFile(path.join(componentsDir, 'random-data-collector.ts'), collectorContent)
-  await fs.writeFile(path.join(componentsDir, 'data-processor.ts'), handlerContent)
-  await fs.writeFile(path.join(componentsDir, 'index.ts'), indexContent)
+
+    await fs.writeFile(path.join(componentsDir, 'random-data-collector.ts'), collectorContent)
+    await fs.writeFile(path.join(componentsDir, 'data-processor.ts'), handlerContent)
+    await fs.writeFile(path.join(componentsDir, 'index.ts'), indexContent)
 }
 
 async function generateDockerFiles(projectPath: string, answers: ProjectAnswers): Promise<void> {
-  const { database, useRedis, projectName } = answers
-  
-  // Dockerfile
-  const dockerfileContent = `FROM node:18-alpine
+    const {database, useRedis, projectName} = answers
+
+    // Dockerfile
+    const dockerfileContent = `FROM node:18-alpine
 
 WORKDIR /app
 
@@ -763,9 +762,9 @@ EXPOSE 3000
 
 CMD ["npm", "start"]
 `
-  
-  // docker-compose.yml
-  let dockerComposeContent = `version: '3.8'
+
+    // docker-compose.yml
+    let dockerComposeContent = `version: '3.8'
 
 services:
   app:
@@ -782,8 +781,8 @@ services:
       - ./uploads:/app/uploads
 `
 
-  if (database === 'postgresql') {
-    dockerComposeContent += `
+    if (database === 'postgresql') {
+        dockerComposeContent += `
   postgres:
     image: postgres:15-alpine
     environment:
@@ -795,46 +794,46 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
 `
-  }
-  
-  if (useRedis) {
-    dockerComposeContent += `
+    }
+
+    if (useRedis) {
+        dockerComposeContent += `
   redis:
     image: redis:7-alpine
     ports:
       - "6379:6379"
 `
-  }
-  
-  if (database === 'postgresql') {
-    dockerComposeContent += `
+    }
+
+    if (database === 'postgresql') {
+        dockerComposeContent += `
 volumes:
   postgres_data:
 `
-  }
-  
-  await fs.writeFile(path.join(projectPath, 'Dockerfile'), dockerfileContent)
-  await fs.writeFile(path.join(projectPath, 'docker-compose.yml'), dockerComposeContent)
+    }
+
+    await fs.writeFile(path.join(projectPath, 'Dockerfile'), dockerfileContent)
+    await fs.writeFile(path.join(projectPath, 'docker-compose.yml'), dockerComposeContent)
 }
 
 async function generateReadme(projectPath: string, answers: ProjectAnswers): Promise<void> {
-  const { projectName, database, storage, useRedis, includeDocker, includeExamples, localStoragePath } = answers
-  
-  const dbLabel = database === 'postgresql' ? 'PostgreSQL with production-ready configuration' : 'SQLite for easy development'
-  const storageLabel = storage === 'local' 
-    ? `Local file system storage (${localStoragePath || './uploads'})` 
-    : 'OVH Object Storage integration'
-  const queueLabel = useRedis ? 'Redis-powered background jobs' : 'In-memory job processing'
-  const exampleFeature = includeExamples ? '✅ **Example Components** - Random data collector and data processor included' : ''
-  
-  const dbConfig = database === 'postgresql' ? 'PostgreSQL' : 'SQLite'
-  const storageConfig = storage === 'local' 
-    ? `Local File System (${localStoragePath || './uploads'})` 
-    : 'OVH Object Storage'
-  const queueConfig = useRedis ? 'Redis (BullMQ)' : 'In-memory'
-  const dockerConfig = includeDocker ? 'Included' : 'Not included'
-  
-  const readmeContent = `# ${projectName}
+    const {projectName, database, storage, useRedis, includeDocker, includeExamples, localStoragePath} = answers
+
+    const dbLabel = database === 'postgresql' ? 'PostgreSQL with production-ready configuration' : 'SQLite for easy development'
+    const storageLabel = storage === 'local'
+        ? `Local file system storage (${localStoragePath || './uploads'})`
+        : 'OVH Object Storage integration'
+    const queueLabel = useRedis ? 'Redis-powered background jobs' : 'In-memory job processing'
+    const exampleFeature = includeExamples ? '✅ **Example Components** - Random data collector and data processor included' : ''
+
+    const dbConfig = database === 'postgresql' ? 'PostgreSQL' : 'SQLite'
+    const storageConfig = storage === 'local'
+        ? `Local File System (${localStoragePath || './uploads'})`
+        : 'OVH Object Storage'
+    const queueConfig = useRedis ? 'Redis (BullMQ)' : 'In-memory'
+    const dockerConfig = includeDocker ? 'Included' : 'Not included'
+
+    const readmeContent = `# ${projectName}
 
 Digital Twin application built with [digitaltwin-core](https://github.com/CePseudoBE/digital-twin-core).
 
@@ -897,6 +896,6 @@ ${database === 'postgresql' || useRedis ? `${(database === 'postgresql' && useRe
 - [Digital Twin Concepts](https://en.wikipedia.org/wiki/Digital_twin)
 - [Environment Configuration Best Practices](https://12factor.net/config)
 `
-  
-  await fs.writeFile(path.join(projectPath, 'README.md'), readmeContent)
+
+    await fs.writeFile(path.join(projectPath, 'README.md'), readmeContent)
 }
