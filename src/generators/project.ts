@@ -42,7 +42,7 @@ async function generatePackageJson(projectPath: string, answers: ProjectAnswers)
     const {projectName, database, storage, useRedis} = answers
 
     const dependencies: PackageJsonDependencies = {
-        'digitaltwin-core': '^0.2.1',
+        'digitaltwin-core': '^0.2.4',
         'knex': '^3.0.0',
         'commander': '^12.0.0'
     }
