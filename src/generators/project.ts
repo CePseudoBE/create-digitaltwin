@@ -58,7 +58,7 @@ async function generatePackageJson(projectPath: string, answers: ProjectAnswers)
         dependencies.pg = '^8.11.0'
         devDependencies['@types/pg'] = '^8.10.0'
     } else {
-        dependencies['sqlite3'] = '^5.1.7'
+        dependencies['better-sqlite3'] = '^12.2.0'
     }
 
     // Add Redis if requested
@@ -116,7 +116,7 @@ function generateIndexFile(answers: ProjectAnswers): string {
 
     const storageClass = storage === 'local' ? 'LocalStorageService' : 'OvhS3StorageService'
     const exampleImports = includeExamples
-        ? "import { RandomDataCollector, DataProcessor } from './components/index.js'"
+        ? "import { JSONPlaceholderCollector, DataProcessor } from './components/index.js'"
         : ''
 
     const dbConfigSection = database === 'postgresql'
@@ -170,7 +170,7 @@ function generateIndexFile(answers: ProjectAnswers): string {
     }
   }`
         : `{
-    client: 'sqlite3',
+    client: 'better-sqlite3',
     connection: {
       filename: env.DB_PATH || './data/${projectName}.db'
     },
@@ -178,7 +178,7 @@ function generateIndexFile(answers: ProjectAnswers): string {
   }`
 
     const exampleComponents = includeExamples
-        ? `collectors: [new RandomDataCollector()],
+        ? `collectors: [new JSONPlaceholderCollector()],
     handlers: [new DataProcessor()],`
         : ''
 
@@ -276,7 +276,7 @@ function generateCliFile(answers: ProjectAnswers): string {
     }
   }`
         : `{
-    client: 'sqlite3',
+    client: 'better-sqlite3',
     connection: {
       filename: process.env.DB_PATH || './data/${projectName}.db'
     },
@@ -499,93 +499,125 @@ async function generateExampleComponents(projectPath: string, answers: ProjectAn
     const componentsDir = path.join(projectPath, 'src', 'components')
     await fs.ensureDir(componentsDir)
 
-    // Random Data Collector
+    // JSONPlaceholder Data Collector
     const collectorContent = `import { Collector } from 'digitaltwin-core'
 
-interface SensorData {
-  timestamp: Date
-  sensorId: string
-  sensorType: string
-  location: string
-  value: number
-  unit: string
-  quality: 'good' | 'warning'
-  metadata: {
-    deviceId: string
-    batteryLevel: number
-    signalStrength: number
+interface Post {
+  number
+  number
+  string
+  string
+}
+
+interface User {
+  number
+  string
+  string
+  string
+  string
+  string
+  {
+    string
+    string
+    string
+  }
+  {
+    string
+    string
+    string
+    string
+    {
+      string
+      string
+    }
+  }
+}
+
+interface CollectedData {
+  Date
+  'jsonplaceholder'
+  Post[]
+  User[]
+  {
+    number
+    number
+    number
   }
 }
 
 /**
- * Random Data Collector - Generates realistic IoT sensor data
- * Simulates temperature, humidity, and pressure sensors
+ * JSONPlaceholder Data Collector - Fetches real data from JSONPlaceholder API
+ * Demonstrates collecting data from external REST APIs
  */
-export class RandomDataCollector extends Collector {
-  private sensorTypes: string[] = ['temperature', 'humidity', 'pressure', 'vibration', 'light']
-  private locations: string[] = ['room-a', 'room-b', 'warehouse', 'server-room', 'outdoor']
+export class JSONPlaceholderCollector extends Collector {
+  private readonly baseUrl = 'https://jsonplaceholder.typicode.com'
   
-  getName(): string {
-    return 'random-data-collector'
-  }
-  
-  getDescription(): string {
-    return 'Collects random IoT sensor data for testing and development'
+  getConfiguration() {
+    return {
+      name: 'jsonplaceholder-collector',
+      description: 'Collects posts and users data from JSONPlaceholder API',
+      contentType: 'application/json',
+      endpoint: 'api/jsonplaceholder',
+      tags: ['api', 'external', 'demo']
+    }
   }
   
   async collect(): Promise<Buffer> {
-    const dataPoints: SensorData[] = []
-    const numSensors = Math.floor(Math.random() * 5) + 3 // 3-7 sensors
+    const startTime = Date.now()
     
-    for (let i = 0; i < numSensors; i++) {
-      const sensorType = this.sensorTypes[Math.floor(Math.random() * this.sensorTypes.length)]
-      const location = this.locations[Math.floor(Math.random() * this.locations.length)]
+    try {
+      console.log('🌐 Fetching data from JSONPlaceholder API...')
       
-      let value: number, unit: string
-      switch (sensorType) {
-        case 'temperature':
-          value = Math.round((Math.random() * 40 + 15) * 10) / 10 // 15-55°C
-          unit = 'celsius'
-          break
-        case 'humidity':
-          value = Math.round(Math.random() * 80 + 20) // 20-100%
-          unit = 'percent'
-          break
-        case 'pressure':
-          value = Math.round((Math.random() * 200 + 950) * 10) / 10 // 950-1150 hPa
-          unit = 'hPa'
-          break
-        case 'vibration':
-          value = Math.round(Math.random() * 10 * 100) / 100 // 0-10 m/s²
-          unit = 'm/s²'
-          break
-        case 'light':
-          value = Math.round(Math.random() * 1000) // 0-1000 lux
-          unit = 'lux'
-          break
-        default:
-          value = Math.random() * 100
-          unit = 'generic'
+      // Fetch posts and users concurrently
+      const [postsResponse, usersResponse] = await Promise.all([
+        fetch(\`\${this.baseUrl}/posts?_limit=10\`),
+        fetch(\`\${this.baseUrl}/users\`)
+      ])
+      
+      if (!postsResponse.ok) {
+        throw new Error(\`Posts API error: \${postsResponse.status}\`)
       }
       
-      dataPoints.push({
+      if (!usersResponse.ok) {
+        throw new Error(\`Users API error: \${usersResponse.status}\`)
+      }
+      
+      const posts: Post[] = await postsResponse.json()
+      const users: User[] = await usersResponse.json()
+      
+      const collectionDuration = Date.now() - startTime
+      
+      const data: CollectedData = {
         timestamp: new Date(),
-        sensorId: \`\${sensorType}-\${location}-\${String(i + 1).padStart(2, '0')}\`,
-        sensorType,
-        location,
-        value,
-        unit,
-        quality: Math.random() > 0.9 ? 'warning' : 'good', // 10% chance of warning
+        source: 'jsonplaceholder',
+        posts,
+        users,
         metadata: {
-          deviceId: \`device-\${Math.floor(Math.random() * 100)}\`,
-          batteryLevel: Math.round(Math.random() * 100),
-          signalStrength: Math.round(Math.random() * 100)
+          postsCount: posts.length,
+          usersCount: users.length,
+          collectionDuration
         }
-      })
+      }
+      
+      console.log(\`📊 Collected \${posts.length} posts and \${users.length} users from JSONPlaceholder (\${collectionDuration}ms)\`)
+      return Buffer.from(JSON.stringify(data, null, 2))
+      
+    } catch (error) {
+      console.error('❌ Error collecting data from JSONPlaceholder:', error)
+      
+      // Return error information as data
+      const errorData = {
+        timestamp: new Date(),
+        source: 'jsonplaceholder',
+        error: true,
+        message: error instanceof Error ? error.message : 'Unknown error',
+        metadata: {
+          collectionDuration: Date.now() - startTime
+        }
+      }
+      
+      return Buffer.from(JSON.stringify(errorData, null, 2))
     }
-    
-    console.log(\`📊 Collected \${dataPoints.length} data points from random sensors\`)
-    return Buffer.from(JSON.stringify(dataPoints, null, 2))
   }
   
   getSchedule(): string {
@@ -594,153 +626,11 @@ export class RandomDataCollector extends Collector {
 }
 `
 
-    // Data Processor Handler
-    const handlerContent = `import { Handler } from 'digitaltwin-core'
-
-interface SensorData {
-  string
-  string
-  number
-  'good' | 'warning'
-  metadata?: {
-    batteryLevel?: number
-    signalStrength?: number
-  }
-}
-
-interface ProcessedData extends SensorData {
-  Date
-  boolean
-  {
-    string
-    string
-    string
-    [key: string]: any
-  }
-  string[]
-}
-
-/**
- * Data Processor - Processes and enriches collected sensor data
- * Adds analysis, alerts, and data quality checks
- */
-export class DataProcessor extends Handler {
-  getName(): string {
-    return 'data-processor'
-  }
-  
-  getDescription(): string {
-    return 'Processes sensor data with analysis and alerting'
-  }
-  
-  async handle(data: SensorData): Promise<ProcessedData> {
-    console.log(\`🔄 Processing data from sensor: \${data.sensorId}\`)
-    
-    // Add processing metadata
-    const processedData: ProcessedData = {
-      ...data,
-      processedAt: new Date(),
-      processed: true,
-      analysis: this.analyzeData(data),
-      alerts: this.checkAlerts(data)
-    }
-    
-    // Log alerts if any
-    if (processedData.alerts.length > 0) {
-      console.log(\`⚠️  Alerts for \${data.sensorId}:\`, processedData.alerts)
-    }
-    
-    return processedData
-  }
-  
-  private analyzeData(data: SensorData): any {
-    const analysis: any = {
-      trend: this.calculateTrend(data.value),
-      category: this.categorizeValue(data.sensorType, data.value),
-      reliability: (data.metadata?.batteryLevel ?? 0) > 20 ? 'high' : 'low'
-    }
-    
-    // Add sensor-specific analysis
-    switch (data.sensorType) {
-      case 'temperature':
-        analysis.heatIndex = data.value > 30 ? 'high' : data.value < 10 ? 'low' : 'normal'
-        break
-      case 'humidity':
-        analysis.comfortLevel = data.value > 60 ? 'humid' : data.value < 30 ? 'dry' : 'comfortable'
-        break
-      case 'pressure':
-        analysis.weatherTrend = data.value > 1020 ? 'rising' : data.value < 980 ? 'falling' : 'stable'
-        break
-    }
-    
-    return analysis
-  }
-  
-  private checkAlerts(data: SensorData): string[] {
-    const alerts: string[] = []
-    
-    // Quality-based alerts
-    if (data.quality === 'warning') {
-      alerts.push('Data quality warning detected')
-    }
-    
-    // Battery alerts
-    if ((data.metadata?.batteryLevel ?? 0) < 20) {
-      alerts.push('Low battery level')
-    }
-    
-    // Sensor-specific alerts
-    switch (data.sensorType) {
-      case 'temperature':
-        if (data.value > 50) alerts.push('High temperature alert')
-        if (data.value < 0) alerts.push('Freezing temperature alert')
-        break
-      case 'humidity':
-        if (data.value > 80) alerts.push('High humidity alert')
-        break
-      case 'pressure':
-        if (data.value < 960) alerts.push('Low pressure system detected')
-        break
-      case 'vibration':
-        if (data.value > 8) alerts.push('High vibration detected')
-        break
-    }
-    
-    return alerts
-  }
-  
-  private calculateTrend(value: number): string {
-    // Simplified trend calculation (in real scenario, you'd compare with historical data)
-    const randomTrend = Math.random()
-    if (randomTrend > 0.6) return 'increasing'
-    if (randomTrend < 0.4) return 'decreasing'
-    return 'stable'
-  }
-  
-  private categorizeValue(sensorType: string, value: number): string {
-    switch (sensorType) {
-      case 'temperature':
-        if (value > 30) return 'hot'
-        if (value < 15) return 'cold'
-        return 'normal'
-      case 'humidity':
-        if (value > 70) return 'high'
-        if (value < 30) return 'low'
-        return 'normal'
-      default:
-        return 'normal'
-    }
-  }
-}
-`
-
     // Index file for components
-    const indexContent = `export { RandomDataCollector } from './random-data-collector.js'
-export { DataProcessor } from './data-processor.js'
+    const indexContent = `export { JSONPlaceholderCollector } from './jsonplaceholder_collector.js'
 `
 
-    await fs.writeFile(path.join(componentsDir, 'random-data-collector.ts'), collectorContent)
-    await fs.writeFile(path.join(componentsDir, 'data-processor.ts'), handlerContent)
+    await fs.writeFile(path.join(componentsDir, 'jsonplaceholder_collector.ts'), collectorContent)
     await fs.writeFile(path.join(componentsDir, 'index.ts'), indexContent)
 }
 
