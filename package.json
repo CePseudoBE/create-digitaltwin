@@ -1,6 +1,6 @@
 {
   "name": "create-digitaltwin",
-  "version": "0.2.2",
+  "version": "0.2.3",
   "description": "Create digital twin app within a command with templates, env etc.",
   "license": "MIT",
   "author": "Hoffmann Axel",

@@ -42,7 +42,7 @@ async function generatePackageJson(projectPath: string, answers: ProjectAnswers)
     const {projectName, database, storage, useRedis} = answers
 
     const dependencies: PackageJsonDependencies = {
-        'digitaltwin-core': '^0.1.0',
+        'digitaltwin-core': '^0.2.1',
         'knex': '^3.0.0',
         'commander': '^12.0.0'
     }
@@ -50,7 +50,7 @@ async function generatePackageJson(projectPath: string, answers: ProjectAnswers)
     const devDependencies: PackageJsonDependencies = {
         '@types/node': '^24.0.10',
         'typescript': '^5.0.0',
-        'ts-node-dev': '^2.0.0'
+        'tsx': '^4.19.2'
     }
 
     // Add database-specific dependencies
@@ -79,10 +79,10 @@ async function generatePackageJson(projectPath: string, answers: ProjectAnswers)
         type: 'module',
         scripts: {
             build: 'tsc',
-            dev: 'ts-node-dev src/index.ts',
+            dev: 'tsx watch src/index.ts',
             start: 'node dist/index.js',
-            'dt:test': 'ts-node --esm src/dt-cli.ts test',
-            'dt:dev': 'ts-node --esm src/dt-cli.ts dev'
+            'dt:test': 'tsx src/dt-cli.ts test',
+            'dt:dev': 'tsx src/dt-cli.ts dev'
         },
         bin: {
             dt: './dist/dt-cli.js'
