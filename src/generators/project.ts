@@ -11,9 +11,9 @@ const __dirname = path.dirname(__filename)
  * Generates a complete Digital Twin project based on user answers.
  * Creates all necessary files including package.json, TypeScript config,
  * application code, configuration files, and optional features.
- * 
+ *
  * @param answers - User configuration choices from prompts
- * 
+ *
  * @example
  * ```typescript
  * await generateProject({
@@ -59,9 +59,25 @@ export async function generateProject(answers: ProjectAnswers): Promise<void> {
 }
 
 /**
+ * Gets the latest version of digitaltwin-core from npm registry
+ * @returns Promise resolving to the version string
+ * @private
+ */
+async function getLatestDigitalTwinCoreVersion(): Promise<string> {
+    try {
+        const response = await fetch('https://registry.npmjs.org/digitaltwin-core/latest')
+        const data = await response.json()
+        return data.version
+    } catch (error) {
+        console.warn('⚠️  Could not fetch digitaltwin-core version from npm, falling back to default')
+        return '0.3.3' // fallback version
+    }
+}
+
+/**
  * Generates package.json with appropriate dependencies based on user choices.
  * Includes database-specific packages, Redis support, and storage adapters.
- * 
+ *
  * @param projectPath - Target directory for the project
  * @param answers - User configuration choices
  * @private
@@ -69,11 +85,15 @@ export async function generateProject(answers: ProjectAnswers): Promise<void> {
 async function generatePackageJson(projectPath: string, answers: ProjectAnswers): Promise<void> {
     const {projectName, database, storage, useRedis} = answers
 
+    const digitalTwinVersion = await getLatestDigitalTwinCoreVersion()
+
     const dependencies: PackageJsonDependencies = {
-        'digitaltwin-core': '^0.3.2',
+        'digitaltwin-core': `^${digitalTwinVersion}`,
         'knex': '^3.0.0',
-        'commander': '^12.0.0'
+        'commander': '^12.0.0',
+        'dotenv' : '^17.2.1'
     }
+
 
     const devDependencies: PackageJsonDependencies = {
         '@types/node': '^24.0.10',
@@ -109,12 +129,8 @@ async function generatePackageJson(projectPath: string, answers: ProjectAnswers)
             build: 'tsc',
             dev: 'tsx watch src/index.ts',
             start: 'node dist/index.js',
-            'dt:test': 'tsx src/dt-cli.ts test',
-            'dt:dev': 'tsx src/dt-cli.ts dev'
         },
-        bin: {
-            dt: './dist/dt-cli.js'
-        },
+        bin: {},
         dependencies,
         devDependencies
     }
@@ -123,9 +139,9 @@ async function generatePackageJson(projectPath: string, answers: ProjectAnswers)
 }
 
 /**
- * Generates main application files including index.ts, CLI tool, and TypeScript config.
+ * Generates main application files including index.ts, and TypeScript config.
  * Creates the core structure for a Digital Twin application.
- * 
+ *
  * @param projectPath - Target directory for the project
  * @param answers - User configuration choices
  * @private
@@ -138,10 +154,6 @@ async function generateAppFiles(projectPath: string, answers: ProjectAnswers): P
     const indexContent = generateIndexFile(answers)
     await fs.writeFile(path.join(srcDir, 'index.ts'), indexContent)
 
-    // Generate dt-cli.ts for commands
-    const cliContent = generateCliFile(answers)
-    await fs.writeFile(path.join(srcDir, 'dt-cli.ts'), cliContent)
-
     // Generate TypeScript config
     const tsconfigContent = generateTsConfig()
     await fs.writeFile(path.join(projectPath, 'tsconfig.json'), tsconfigContent)
@@ -150,13 +162,15 @@ async function generateAppFiles(projectPath: string, answers: ProjectAnswers): P
 /**
  * Generates the main index.ts file with environment validation and engine setup.
  * Includes database configuration, storage setup, and example components if requested.
- * 
+ *
  * @param answers - User configuration choices
  * @returns Generated TypeScript code as string
  * @private
  */
 function generateIndexFile(answers: ProjectAnswers): string {
     const {projectName, database, storage, useRedis, includeExamples, localStoragePath} = answers
+
+    const dotenvImport = `import 'dotenv/config'`
 
     const storageClass = storage === 'local' ? 'LocalStorageService' : 'OvhS3StorageService'
     const exampleImports = includeExamples
@@ -232,7 +246,8 @@ function generateIndexFile(answers: ProjectAnswers): string {
     const queueDisplay = useRedis ? 'Redis enabled' : 'In-memory mode'
     const dbDisplay = database === 'postgresql' ? 'PostgreSQL' : 'SQLite'
 
-    return `import { DigitalTwinEngine, KnexDatabaseAdapter, Env } from 'digitaltwin-core'
+    return `${dotenvImport}
+import { DigitalTwinEngine, KnexDatabaseAdapter, Env } from 'digitaltwin-core'
 import { ${storageClass} } from 'digitaltwin-core'
 ${exampleImports}
 
@@ -292,160 +307,9 @@ main().catch((error: Error) => {
 }
 
 /**
- * Generates the CLI tool (dt-cli.ts) for development commands.
- * Provides 'test' and 'dev' commands for dry-run validation and development server.
- * 
- * @param answers - User configuration choices
- * @returns Generated TypeScript code as string
- * @private
- */
-function generateCliFile(answers: ProjectAnswers): string {
-    const {projectName, database, storage, useRedis, localStoragePath} = answers
-
-    const storageClass = storage === 'local' ? 'LocalStorageService' : 'OvhS3StorageService'
-    const dbInterface = database === 'postgresql' ? 'PostgreSQLConfig' : 'SQLiteConfig'
-
-    const storageInit = storage === 'local'
-        ? `process.env.STORAGE_PATH || '${localStoragePath || './uploads'}'`
-        : `{
-    accessKey: process.env.OVH_ACCESS_KEY || '',
-    secretKey: process.env.OVH_SECRET_KEY || '',
-    endpoint: process.env.OVH_ENDPOINT || '',
-    region: process.env.OVH_REGION || 'gra',
-    bucket: process.env.OVH_BUCKET || '${projectName}-storage'
-  }`
-
-    const dbConfig = database === 'postgresql'
-        ? `{
-    client: 'pg',
-    connection: {
-      host: process.env.DB_HOST || 'localhost',
-      port: parseInt(process.env.DB_PORT || '5432'),
-      user: process.env.DB_USER || 'postgres',
-      password: process.env.DB_PASSWORD || 'password',
-      database: process.env.DB_NAME || '${projectName}'
-    }
-  }`
-        : `{
-    client: 'better-sqlite3',
-    connection: {
-      filename: process.env.DB_PATH || './data/${projectName}.db'
-    },
-    useNullAsDefault: true
-  }`
-
-    return `#!/usr/bin/env node
-
-import { DigitalTwinEngine, KnexDatabaseAdapter } from 'digitaltwin-core'
-import { ${storageClass} } from 'digitaltwin-core'
-import { program } from 'commander'
-import { fileURLToPath } from 'url'
-import path from 'path'
-import fs from 'fs'
-
-const __filename = fileURLToPath(import.meta.url)
-const __dirname = path.dirname(__filename)
-
-// Load environment variables
-const envPath = path.join(__dirname, '../.env')
-if (fs.existsSync(envPath)) {
-  const envContent = fs.readFileSync(envPath, 'utf8')
-  envContent.split('\\n').forEach(line => {
-    const [key, value] = line.split('=')
-    if (key && value) {
-      process.env[key.trim()] = value.trim()
-    }
-  })
-}
-
-async function createEngine(): Promise<DigitalTwinEngine> {
-  // Initialize storage service first
-  const storage = new ${storageClass}(${storageInit})
-  
-  // Database configuration
-  const dbConfig = ${dbConfig}
-  
-  // Initialize database adapter
-  const database = new KnexDatabaseAdapter(dbConfig, storage)
-  
-  // Create Digital Twin Engine
-  const engine = new DigitalTwinEngine({
-    database,
-    storage
-  })
-  
-  return engine
-}
-
-program
-  .version('1.0.0')
-  .description('Digital Twin CLI commands')
-
-program
-  .command('test')
-  .description('Run dry-run validation')
-  .action(async () => {
-    console.log('🧪 Running dry-run validation...')
-    
-    try {
-      const engine = await createEngine()
-      
-      // Run validation
-      const result = await engine.validateConfiguration()
-      
-      if (result.valid) {
-        console.log('✅ Dry-run validation completed successfully')
-        console.log(\`📊 Components: \${result.summary.valid}/\${result.summary.total} valid\`)
-      } else {
-        console.log('❌ Validation failed')
-        result.components.forEach(comp => {
-          if (!comp.valid) {
-            console.log(\`  • \${comp.name} (\${comp.type}): \${comp.errors.join(', ')}\`)
-          }
-        })
-        process.exit(1)
-      }
-    } catch (error: any) {
-      console.error('❌ Validation failed:', error.message)
-      process.exit(1)
-    }
-  })
-
-program
-  .command('dev')
-  .description('Start development server')
-  .action(async () => {
-    console.log('🔥 Starting development server...')
-    
-    try {
-      const engine = await createEngine()
-      
-      // Start the engine
-      await engine.start()
-      const port = engine.getPort()
-      console.log(\`🚀 Digital Twin Engine started on port \${port || '3000'}\`)
-      
-      // Handle graceful shutdown
-      process.on('SIGINT', async () => {
-        console.log('\\n🛑 Shutting down gracefully...')
-        await engine.stop()
-        process.exit(0)
-      })
-      
-    } catch (error: any) {
-      console.error('❌ Failed to start server:', error.message)
-      process.exit(1)
-    }
-  })
-
-program.parse()
-`
-}
-
-/**
  * Generates TypeScript configuration file (tsconfig.json) with ES2022 target.
  * Configured for ESNext modules with strict type checking enabled.
- * 
+ *
  * @returns JSON string for tsconfig.json
  * @private
  */
@@ -475,7 +339,7 @@ function generateTsConfig(): string {
 /**
  * Generates configuration files including .env and .gitignore.
  * Creates environment variable templates and Git ignore rules.
- * 
+ *
  * @param projectPath - Target directory for the project
  * @param answers - User configuration choices
  * @private
@@ -500,7 +364,7 @@ data/
 /**
  * Generates .env file with environment variables based on selected configuration.
  * Includes database settings, storage paths, Redis config, and development options.
- * 
+ *
  * @param answers - User configuration choices
  * @returns Environment file content as string
  * @private
@@ -572,7 +436,7 @@ LOG_LEVEL=info
 /**
  * Generates example components including JSONPlaceholder collector.
  * Creates a complete working example that demonstrates data collection from external APIs.
- * 
+ *
  * @param projectPath - Target directory for the project
  * @param answers - User configuration choices
  * @private
@@ -719,7 +583,7 @@ export class JSONPlaceholderCollector extends Collector {
 /**
  * Generates Docker configuration files including Dockerfile and docker-compose.yml.
  * Sets up containerized environment with appropriate services based on user choices.
- * 
+ *
  * @param projectPath - Target directory for the project
  * @param answers - User configuration choices
  * @private
@@ -799,7 +663,7 @@ volumes:
 /**
  * Generates comprehensive README.md with project-specific setup instructions.
  * Includes features overview, configuration details, and getting started guide.
- * 
+ *
  * @param projectPath - Target directory for the project
  * @param answers - User configuration choices
  * @private
