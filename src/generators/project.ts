@@ -56,6 +56,9 @@ export async function generateProject(answers: ProjectAnswers): Promise<void> {
 
     // Generate README
     await generateReadme(projectPath, answers)
+
+    // Generate dt.js CLI wrapper
+    await generateDtCli(projectPath)
 }
 
 /**
@@ -75,6 +78,22 @@ async function getLatestDigitalTwinCoreVersion(): Promise<string> {
 }
 
 /**
+ * Gets the latest version of digitaltwin-cli from npm registry
+ * @returns Promise resolving to the version string
+ * @private
+ */
+async function getLatestDigitalTwinCliVersion(): Promise<string> {
+    try {
+        const response = await fetch('https://registry.npmjs.org/digitaltwin-cli/latest')
+        const data = await response.json()
+        return data.version
+    } catch (error) {
+        console.warn('⚠️  Could not fetch digitaltwin-cli version from npm, falling back to default')
+        return '0.1.0' // fallback version
+    }
+}
+
+/**
  * Generates package.json with appropriate dependencies based on user choices.
  * Includes database-specific packages, Redis support, and storage adapters.
  *
@@ -86,6 +105,7 @@ async function generatePackageJson(projectPath: string, answers: ProjectAnswers)
     const {projectName, database, storage, useRedis} = answers
 
     const digitalTwinVersion = await getLatestDigitalTwinCoreVersion()
+    const digitalTwinCliVersion = await getLatestDigitalTwinCliVersion()
 
     const dependencies: PackageJsonDependencies = {
         'digitaltwin-core': `^${digitalTwinVersion}`,
@@ -98,7 +118,8 @@ async function generatePackageJson(projectPath: string, answers: ProjectAnswers)
     const devDependencies: PackageJsonDependencies = {
         '@types/node': '^24.0.10',
         'typescript': '^5.0.0',
-        'tsx': '^4.19.2'
+        'tsx': '^4.19.2',
+        'digitaltwin-cli': `^${digitalTwinCliVersion}`
     }
 
     // Add database-specific dependencies
@@ -752,4 +773,30 @@ ${database === 'postgresql' || useRedis ? `${(database === 'postgresql' && useRe
 `
 
     await fs.writeFile(path.join(projectPath, 'README.md'), readmeContent)
+}
+
+/**
+ * Generates dt.js CLI wrapper that calls digitaltwin-cli
+ * 
+ * @param projectPath - Target directory for the project
+ * @private
+ */
+async function generateDtCli(projectPath: string): Promise<void> {
+    const dtCliContent = `#!/usr/bin/env node
+
+import { spawn } from 'child_process'
+
+// Call digitaltwin-cli with all arguments
+const args = process.argv.slice(2)
+const child = spawn('npx', ['digitaltwin-cli', ...args], { 
+  stdio: 'inherit',
+  cwd: process.cwd()
+})
+
+child.on('exit', (code) => {
+  process.exit(code || 0)
+})
+`
+
+    await fs.writeFile(path.join(projectPath, 'dt.js'), dtCliContent)
 }
