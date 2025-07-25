@@ -327,7 +327,9 @@ function generateTsConfig(): string {
             strict: true,
             declaration: true,
             skipLibCheck: true,
-            forceConsistentCasingInFileNames: true
+            forceConsistentCasingInFileNames: true,
+            experimentalDecorators: true,
+            useDefineForClassFields: false
         },
         include: ['src/**/*'],
         exclude: ['node_modules', 'dist']
