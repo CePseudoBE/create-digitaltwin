@@ -4,13 +4,14 @@ TypeScript CLI tool to create Digital Twin applications with [digitaltwin-core](
 
 ## Features
 
-✅ **Interactive Setup** - Guided prompts for project configuration  
-✅ **Database Support** - SQLite (dev) and PostgreSQL (prod) options  
-✅ **Storage Options** - Local filesystem or OVH Object Storage  
-✅ **Queue Management** - Redis support for production workloads  
-✅ **Docker Ready** - Optional Docker and docker-compose configuration  
-✅ **Example Components** - Pre-built IoT sensor collector and data processor  
-✅ **TypeScript First** - Full TypeScript support with strict typing  
+- **Interactive Setup** - Guided prompts for project configuration  
+- **Database Support** - SQLite (dev) and PostgreSQL (prod) options  
+- **Storage Options** - Local filesystem or OVH Object Storage  
+- **Queue Management** - Redis support for production workloads  
+- **Docker Ready** - Optional Docker and docker-compose configuration  
+- **Example Components** - Pre-built IoT sensor collector and data processor  
+- **TypeScript First** - Full TypeScript support with strict typing  
+- **CLI Integration** - Includes digitaltwin-cli for component generation  
 
 ## Quick Start
 
@@ -67,7 +68,6 @@ The CLI will guide you through configuration options:
 my-digital-twin/
 ├── src/
 │   ├── index.ts                 # Main application entry
-│   ├── dt-cli.ts               # CLI commands (test, dev)
 │   └── components/             # Example components (optional)
 │       ├── jsonplaceholder_collector.ts
 │       └── index.ts
@@ -76,6 +76,7 @@ my-digital-twin/
 ├── .env                       # Environment variables template
 ├── .gitignore
 ├── README.md                  # Project-specific documentation
+├── dt.js                      # CLI wrapper for digitaltwin-cli
 ├── Dockerfile                 # Docker configuration (optional)
 ├── docker-compose.yml         # Multi-service setup (optional)
 └── dist/                      # Compiled JavaScript (after build)
@@ -94,6 +95,20 @@ When enabled, the generator includes working example components:
 
 **Generated Endpoints:**
 - `GET /api/jsonplaceholder` - Latest collected data from JSONPlaceholder
+
+## CLI Integration
+
+Each generated project includes `dt.js`, a wrapper that calls [digitaltwin-cli](https://github.com/CePseudoBE/digitaltwin-cli) for component generation:
+
+```bash
+# Generate components after project creation
+node dt make:collector WeatherCollector --description "Collects weather data"
+node dt make:handler ApiHandler --method post
+node dt make:harvester DataProcessor --source weather-collector
+node dt make:assets-manager ImageManager --content-type "image/jpeg"
+```
+
+This provides seamless component scaffolding within your Digital Twin project.
 
 ## Development
 
@@ -163,6 +178,7 @@ This CLI is built with TypeScript and generates fully-typed projects:
 ## Related Projects
 
 - [digitaltwin-core](https://github.com/CePseudoBE/digital-twin-core) - Core framework
+- [digitaltwin-cli](https://github.com/CePseudoBE/digitaltwin-cli) - Component generation CLI
 - [Digital Twin Examples](https://github.com/CePseudoBE/digital-twin-examples) - Sample implementations
 
 ## License

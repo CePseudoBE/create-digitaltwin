@@ -7,7 +7,7 @@
 
 > **CLI tool to scaffold Digital Twin applications with digitaltwin-core framework**
 
-## 📋 Table of Contents
+## Table of Contents
 
 - [Overview](#overview)
 - [Installation Methods](#installation-methods)
@@ -23,22 +23,22 @@
 - [Development](#development)
 - [Architecture](#architecture)
 
-## 🎯 Overview
+## Overview
 
 `create-digitaltwin` is a command-line tool that generates complete Digital Twin applications using the [digitaltwin-core](https://github.com/CePseudoBE/digital-twin-core) framework. It provides interactive prompts to configure your project with the right database, storage, and feature options.
 
 ### Key Features
 
-- **🚀 Multiple Installation Methods** - Support for `npx`, `npm init`, and `yarn create`
-- **🔧 Interactive Configuration** - User-friendly prompts for all project settings
-- **🗄️ Database Flexibility** - SQLite for development, PostgreSQL for production
-- **💾 Storage Options** - Local filesystem or OVH Object Storage (S3-compatible)
-- **🐳 Docker Ready** - Optional Docker and docker-compose configuration
-- **📝 Example Components** - Working examples with JSONPlaceholder API
-- **🛠️ Development Tools** - Built-in CLI commands for testing and development
-- **📚 Complete Documentation** - Generated README with setup instructions
+- **Multiple Installation Methods** - Support for `npx`, `npm init`, and `yarn create`
+- **Interactive Configuration** - User-friendly prompts for all project settings
+- **Database Flexibility** - SQLite for development, PostgreSQL for production
+- **Storage Options** - Local filesystem or OVH Object Storage (S3-compatible)
+- **Docker Ready** - Optional Docker and docker-compose configuration
+- **Example Components** - Working examples with JSONPlaceholder API
+- **Development Tools** - Built-in CLI commands for testing and development
+- **Complete Documentation** - Generated README with setup instructions
 
-## 🚀 Installation Methods
+## Installation Methods
 
 ### Using npx (Recommended)
 
@@ -98,7 +98,7 @@ create-digitaltwin my-digitaltwin-app
 
 Your Digital Twin application will be running at `http://localhost:3000`!
 
-## 🏗️ Project Templates
+## Project Templates
 
 ### Available Configurations
 
@@ -113,14 +113,14 @@ The CLI generates different project templates based on your choices:
 
 ### Template Features
 
-- ✅ **TypeScript Configuration** - Modern ES2022 with strict mode
-- ✅ **Environment Validation** - Type-safe environment variable checking
-- ✅ **Development Scripts** - Hot reload and testing commands
-- ✅ **Production Ready** - Build and deployment configuration
-- ✅ **Docker Support** - Optional containerization setup
-- ✅ **Example Components** - Working data collectors and processors
+- **TypeScript Configuration** - Modern ES2022 with strict mode
+- **Environment Validation** - Type-safe environment variable checking
+- **Development Scripts** - Hot reload and testing commands
+- **Production Ready** - Build and deployment configuration
+- **Docker Support** - Optional containerization setup
+- **Example Components** - Working data collectors and processors
 
-## ⚙️ Configuration Options
+## Configuration Options
 
 ### Interactive Prompts
 
@@ -216,7 +216,7 @@ my-digitaltwin-app/
 └── docker-compose.yml     # Multi-service setup (optional)
 ```
 
-## 🗄️ Database Support
+## Database Support
 
 ### SQLite Configuration
 
@@ -263,7 +263,7 @@ DB_PASSWORD=password
 DB_NAME=my-app
 ```
 
-## 💾 Storage Options
+## Storage Options
 
 ### Local File Storage
 
@@ -443,7 +443,7 @@ After running the generated project:
 - `GET /health` - Engine health status
 - `GET /metrics` - System metrics
 
-## 🛠️ CLI Commands
+## CLI Commands
 
 ### Generated Project Commands
 
@@ -516,7 +516,7 @@ npm run dev test-project
 3. **Update generators** in `src/generators/project.ts`
 4. **Test the new template** with various configurations
 
-## 🏗️ Architecture
+## Architecture
 
 ### Core Components
 
@@ -576,7 +576,7 @@ const env = Env.validate({
 
 ---
 
-## 📞 Support & Contributing
+## Support & Contributing
 
 - **GitHub**: [https://github.com/CePseudoBE/create-digitaltwin](https://github.com/CePseudoBE/create-digitaltwin)
 - **Issues**: Report bugs and request features
@@ -595,4 +595,4 @@ npm link       # Link for local testing
 
 ---
 
-*Built with ❤️ by [Axel Hoffmann](https://github.com/CePseudoBE)*
+*Built by [Axel Hoffmann](https://github.com/CePseudoBE)*

@@ -18,7 +18,7 @@ const program = new Command()
  * ```
  */
 export async function createDigitalTwinApp(): Promise<void> {
-  console.log(chalk.blue.bold('🔷 Create Digital Twin App'))
+  console.log(chalk.blue.bold('Create Digital Twin App'))
   console.log(chalk.gray('Generate a new Digital Twin project with digitaltwin-core\n'))
 
   program
@@ -31,14 +31,14 @@ export async function createDigitalTwinApp(): Promise<void> {
         const answers: ProjectAnswers = await getProjectPrompts(projectName)
         await generateProject(answers)
         
-        console.log(chalk.green.bold('\n✅ Project created successfully!'))
+        console.log(chalk.green.bold('\nProject created successfully!'))
         console.log(chalk.cyan('\nNext steps:'))
         console.log(chalk.white(`  cd ${answers.projectName}`))
         console.log(chalk.white('  npm install'))
         console.log(chalk.white('  npm run dev     # Start the development server'))
         console.log(chalk.white('  node dt test    # Run dry-run test'))
       } catch (error: any) {
-        console.error(chalk.red('❌ Error creating project:'), error.message)
+        console.error(chalk.red('Error creating project:'), error.message)
         process.exit(1)
       }
     })

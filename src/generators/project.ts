@@ -30,7 +30,7 @@ const __dirname = path.dirname(__filename)
 export async function generateProject(answers: ProjectAnswers): Promise<void> {
     const {projectPath} = answers
 
-    console.log(chalk.blue(`📁 Creating project at: ${projectPath}`))
+    console.log(chalk.blue(`Creating project at: ${projectPath}`))
 
     // Create project directory
     await fs.ensureDir(projectPath)
@@ -72,7 +72,7 @@ async function getLatestDigitalTwinCoreVersion(): Promise<string> {
         const data = await response.json()
         return data.version
     } catch (error) {
-        console.warn('⚠️  Could not fetch digitaltwin-core version from npm, falling back to default')
+        console.warn('Warning: Could not fetch digitaltwin-core version from npm, falling back to default')
         return '0.3.3' // fallback version
     }
 }
@@ -88,7 +88,7 @@ async function getLatestDigitalTwinCliVersion(): Promise<string> {
         const data = await response.json()
         return data.version
     } catch (error) {
-        console.warn('⚠️  Could not fetch digitaltwin-cli version from npm, falling back to default')
+        console.warn('Warning: Could not fetch digitaltwin-cli version from npm, falling back to default')
         return '0.1.0' // fallback version
     }
 }
@@ -273,14 +273,14 @@ import { ${storageClass} } from 'digitaltwin-core'
 ${exampleImports}
 
 async function main(): Promise<void> {
-  console.log('🔷 Starting ${projectName} Digital Twin...')
+  console.log('Starting ${projectName} Digital Twin...')
   
   // Validate environment variables
   const env = Env.validate({
     PORT: Env.schema.number({ optional: true }),${dbConfigSection}${storageConfigSection}${redisConfigSection}
   })
   
-  console.log('✅ Environment variables validated')
+  console.log('Environment variables validated')
   
   // Initialize storage service first
   const storage = new ${storageClass}(${storageInit})
@@ -302,15 +302,15 @@ async function main(): Promise<void> {
     ${exampleComponents}
   })
   
-  console.log('🔧 Digital Twin Engine configured')
+  console.log('Digital Twin Engine configured')
   
   // Start the engine
   await engine.start()
   const port = engine.getPort() || env.PORT || 3000
-  console.log(\`🚀 Digital Twin Engine started on port \${port}\`)
-  console.log(\`📊 Database: ${dbDisplay}\`)
-  console.log(\`💾 Storage: ${storageDisplay}\`)
-  console.log(\`🔄 Queue: ${queueDisplay}\`)
+  console.log(\`Digital Twin Engine started on port \${port}\`)
+  console.log(\`Database: ${dbDisplay}\`)
+  console.log(\`Storage: ${storageDisplay}\`)
+  console.log(\`Queue: ${queueDisplay}\`)
   
   // Graceful shutdown
   process.on('SIGINT', async () => {
@@ -535,7 +535,7 @@ export class JSONPlaceholderCollector extends Collector {
     const startTime = Date.now()
     
     try {
-      console.log('🌐 Fetching data from JSONPlaceholder API...')
+      console.log('Fetching data from JSONPlaceholder API...')
       
       // Fetch posts and users concurrently
       const [postsResponse, usersResponse] = await Promise.all([
@@ -568,11 +568,11 @@ export class JSONPlaceholderCollector extends Collector {
         }
       }
       
-      console.log(\`📊 Collected \${posts.length} posts and \${users.length} users from JSONPlaceholder (\${collectionDuration}ms)\`)
+      console.log(\`Collected \${posts.length} posts and \${users.length} users from JSONPlaceholder (\${collectionDuration}ms)\`)
       return Buffer.from(JSON.stringify(data, null, 2))
       
     } catch (error) {
-      console.error('❌ Error collecting data from JSONPlaceholder:', error)
+      console.error('Error collecting data from JSONPlaceholder:', error)
       
       // Return error information as data
       const errorData = {
@@ -699,7 +699,7 @@ async function generateReadme(projectPath: string, answers: ProjectAnswers): Pro
         ? `Local file system storage (${localStoragePath || './uploads'})`
         : 'OVH Object Storage integration'
     const queueLabel = useRedis ? 'Redis-powered background jobs' : 'In-memory job processing'
-    const exampleFeature = includeExamples ? '✅ **Example Components** - Random data collector and data processor included' : ''
+    const exampleFeature = includeExamples ? '- **Example Components** - Random data collector and data processor included' : ''
 
     const dbConfig = database === 'postgresql' ? 'PostgreSQL' : 'SQLite'
     const storageConfig = storage === 'local'
@@ -714,10 +714,10 @@ Digital Twin application built with [digitaltwin-core](https://github.com/CePseu
 
 ## Features
 
-✅ **Environment Validation** - Automatic validation of required configuration  
-✅ **Database Support** - ${dbLabel}  
-✅ **Storage** - ${storageLabel}  
-✅ **Queue Management** - ${queueLabel}  
+- **Environment Validation** - Automatic validation of required configuration  
+- **Database Support** - ${dbLabel}  
+- **Storage** - ${storageLabel}  
+- **Queue Management** - ${queueLabel}  
 ${exampleFeature}
 
 ## Configuration
