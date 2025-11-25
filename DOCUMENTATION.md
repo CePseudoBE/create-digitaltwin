@@ -83,7 +83,7 @@ create-digitaltwin my-digitaltwin-app
 
 3. **Configure environment:**
    ```bash
-   # Edit the generated .env file with your settings
+   # Edit the generated ..env file with your settings
    ```
 
 4. **Start development:**
@@ -471,8 +471,8 @@ cd weather-station
 npm install
 
 # 2. Configure environment
-cp .env .env.local
-# Edit .env.local with your settings
+cp ..env ..env.local
+# Edit ..env.local with your settings
 
 # 3. Test configuration
 node dt test

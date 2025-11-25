@@ -73,7 +73,7 @@ async function getLatestDigitalTwinCoreVersion(): Promise<string> {
         return data.version
     } catch (error) {
         console.warn('Warning: Could not fetch digitaltwin-core version from npm, falling back to default')
-        return '0.3.3' // fallback version
+        return '0.10.0' // fallback version
     }
 }
 
@@ -273,55 +273,46 @@ import { ${storageClass} } from 'digitaltwin-core'
 ${exampleImports}
 
 async function main(): Promise<void> {
-  console.log('Starting ${projectName} Digital Twin...')
-  
   // Validate environment variables
   const env = Env.validate({
     PORT: Env.schema.number({ optional: true }),${dbConfigSection}${storageConfigSection}${redisConfigSection}
   })
-  
-  console.log('Environment variables validated')
-  
+
   // Initialize storage service first
   const storage = new ${storageClass}(${storageInit})
-  
+
   // Database configuration
   const dbConfig = ${dbConfig}
-  
+
   // Initialize database adapter
   const database = new KnexDatabaseAdapter(dbConfig, storage)
-  
+
   // Create Digital Twin Engine
   const engine = new DigitalTwinEngine({
     database,
     storage,
     redis: {
-      host: 'localhost',
-      port: 6379
+      host: env.REDIS_HOST || 'localhost',
+      port: env.REDIS_PORT || 6379
     },
     ${exampleComponents}
   })
-  
-  console.log('Digital Twin Engine configured')
-  
+
   // Start the engine
   await engine.start()
   const port = engine.getPort() || env.PORT || 3000
-  console.log(\`Digital Twin Engine started on port \${port}\`)
-  console.log(\`Database: ${dbDisplay}\`)
-  console.log(\`Storage: ${storageDisplay}\`)
-  console.log(\`Queue: ${queueDisplay}\`)
-  
+  console.log(\`[DigitalTwin] Server running on port \${port} | DB: ${dbDisplay} | Storage: ${storage === 'local' ? 'Local' : 'OVH S3'}\`)
+
   // Graceful shutdown
   process.on('SIGINT', async () => {
-    console.log('\\n🛑 Shutting down gracefully...')
+    console.log('[DigitalTwin] Shutting down...')
     await engine.stop()
     process.exit(0)
   })
 }
 
 main().catch((error: Error) => {
-  console.error('❌ Failed to start Digital Twin Engine:', error.message)
+  console.error('[DigitalTwin] Failed to start:', error)
   process.exit(1)
 })
 `
@@ -360,7 +351,7 @@ function generateTsConfig(): string {
 }
 
 /**
- * Generates configuration files including .env and .gitignore.
+ * Generates configuration files including ..env and .gitignore.
  * Creates environment variable templates and Git ignore rules.
  *
  * @param projectPath - Target directory for the project
@@ -368,8 +359,12 @@ function generateTsConfig(): string {
  * @private
  */
 async function generateConfigFiles(projectPath: string, answers: ProjectAnswers): Promise<void> {
-    // Generate .env file
-    const envContent = generateEnvFile(answers)
+    // Generate .env.example file (documentation)
+    const envExampleContent = generateEnvFile(answers)
+    await fs.writeFile(path.join(projectPath, '.env.example'), envExampleContent)
+
+    // Generate .env file (ready to use for development)
+    const envContent = generateDevEnvFile(answers)
     await fs.writeFile(path.join(projectPath, '.env'), envContent)
 
     // Generate .gitignore
@@ -385,7 +380,60 @@ data/
 }
 
 /**
- * Generates .env file with environment variables based on selected configuration.
+ * Generates a ready-to-use .env file for development
+ * @private
+ */
+function generateDevEnvFile(answers: ProjectAnswers): string {
+    const {projectName, database, storage, useRedis, localStoragePath} = answers
+
+    let content = `# Development environment - Ready to use
+NODE_ENV=development
+PORT=3000
+
+`
+
+    if (database === 'postgresql') {
+        content += `# PostgreSQL
+DB_HOST=localhost
+DB_PORT=5432
+DB_USER=postgres
+DB_PASSWORD=postgres
+DB_NAME=${projectName}
+`
+    } else {
+        content += `# SQLite
+DB_PATH=./data/${projectName}.db
+`
+    }
+
+    content += `
+# Storage
+`
+    if (storage === 'local') {
+        content += `STORAGE_PATH=${localStoragePath || './uploads'}
+`
+    } else {
+        content += `OVH_ACCESS_KEY=
+OVH_SECRET_KEY=
+OVH_ENDPOINT=https://s3.gra.io.cloud.ovh.net
+OVH_REGION=gra
+OVH_BUCKET=${projectName}
+`
+    }
+
+    if (useRedis) {
+        content += `
+# Redis
+REDIS_HOST=localhost
+REDIS_PORT=6379
+`
+    }
+
+    return content
+}
+
+/**
+ * Generates ..env file with environment variables based on selected configuration.
  * Includes database settings, storage paths, Redis config, and development options.
  *
  * @param answers - User configuration choices
@@ -468,129 +516,32 @@ async function generateExampleComponents(projectPath: string, answers: ProjectAn
     const componentsDir = path.join(projectPath, 'src', 'components')
     await fs.ensureDir(componentsDir)
 
-    // JSONPlaceholder Data Collector
+    // Simple example collector
     const collectorContent = `import { Collector } from 'digitaltwin-core'
 
-interface Post {
-  id: number
-  userId: number
-  title: string
-  body: string
-}
-
-interface User {
-  id: number
-  name: string
-  username: string
-  email: string
-  phone: string
-  website: string
-  address: {
-    street: string
-    suite: string
-    city: string
-    zipcode: string
-    geo: {
-      lat: string
-      lng: string
-    }
-  }
-  company: {
-    name: string
-    catchPhrase: string
-    bs: string
-  }
-}
-
-interface CollectedData {
-  timestamp: Date
-  source: 'jsonplaceholder'
-  posts: Post[]
-  users: User[]
-  metadata: {
-    postsCount: number
-    usersCount: number
-    collectionDuration: number
-  }
-}
-
 /**
- * JSONPlaceholder Data Collector - Fetches real data from JSONPlaceholder API
- * Demonstrates collecting data from external REST APIs
+ * Example collector that fetches posts from JSONPlaceholder API
+ * Use this as a template for your own collectors
  */
 export class JSONPlaceholderCollector extends Collector {
-  private readonly baseUrl = 'https://jsonplaceholder.typicode.com'
-  
   getConfiguration() {
     return {
-      name: 'jsonplaceholder-collector',
-      description: 'Collects posts and users data from JSONPlaceholder API',
+      name: 'jsonplaceholder',
+      description: 'Fetches posts from JSONPlaceholder API',
       contentType: 'application/json',
-      endpoint: 'api/jsonplaceholder',
-      tags: ['api', 'external', 'demo']
+      endpoint: 'api/posts'
     }
   }
-  
+
   async collect(): Promise<Buffer> {
-    const startTime = Date.now()
-    
-    try {
-      console.log('Fetching data from JSONPlaceholder API...')
-      
-      // Fetch posts and users concurrently
-      const [postsResponse, usersResponse] = await Promise.all([
-        fetch(\`\${this.baseUrl}/posts?_limit=10\`),
-        fetch(\`\${this.baseUrl}/users\`)
-      ])
-      
-      if (!postsResponse.ok) {
-        throw new Error(\`Posts API error: \${postsResponse.status}\`)
-      }
-      
-      if (!usersResponse.ok) {
-        throw new Error(\`Users API error: \${usersResponse.status}\`)
-      }
-      
-      const posts: Post[] = await postsResponse.json()
-      const users: User[] = await usersResponse.json()
-      
-      const collectionDuration = Date.now() - startTime
-      
-      const data: CollectedData = {
-        timestamp: new Date(),
-        source: 'jsonplaceholder',
-        posts,
-        users,
-        metadata: {
-          postsCount: posts.length,
-          usersCount: users.length,
-          collectionDuration
-        }
-      }
-      
-      console.log(\`Collected \${posts.length} posts and \${users.length} users from JSONPlaceholder (\${collectionDuration}ms)\`)
-      return Buffer.from(JSON.stringify(data, null, 2))
-      
-    } catch (error) {
-      console.error('Error collecting data from JSONPlaceholder:', error)
-      
-      // Return error information as data
-      const errorData = {
-        timestamp: new Date(),
-        source: 'jsonplaceholder',
-        error: true,
-        message: error instanceof Error ? error.message : 'Unknown error',
-        metadata: {
-          collectionDuration: Date.now() - startTime
-        }
-      }
-      
-      return Buffer.from(JSON.stringify(errorData, null, 2))
-    }
+    const response = await fetch('https://jsonplaceholder.typicode.com/posts?_limit=5')
+    if (!response.ok) throw new Error(\`API error: \${response.status}\`)
+    const posts = await response.json()
+    return Buffer.from(JSON.stringify({ timestamp: new Date(), posts }))
   }
-  
+
   getSchedule(): string {
-    return '*/15 * * * * *' // Every 15 seconds
+    return '0 */5 * * * *' // Every 5 minutes
   }
 }
 `
@@ -615,7 +566,7 @@ async function generateDockerFiles(projectPath: string, answers: ProjectAnswers)
     const {database, useRedis, projectName} = answers
 
     // Dockerfile
-    const dockerfileContent = `FROM node:18-alpine
+    const dockerfileContent = `FROM node:24-alpine
 
 WORKDIR /app
 
@@ -627,7 +578,8 @@ COPY .env ./
 
 EXPOSE 3000
 
-CMD ["npm", "start"]
+# Start with increased header size for large file uploads
+CMD ["node", "--max-http-header-size=65536", "dist/index.js"]
 `
 
     // docker-compose.yml
@@ -699,7 +651,7 @@ async function generateReadme(projectPath: string, answers: ProjectAnswers): Pro
         ? `Local file system storage (${localStoragePath || './uploads'})`
         : 'OVH Object Storage integration'
     const queueLabel = useRedis ? 'Redis-powered background jobs' : 'In-memory job processing'
-    const exampleFeature = includeExamples ? '- **Example Components** - Random data collector and data processor included' : ''
+    const exampleFeature = includeExamples ? '- **Example Collector** - JSONPlaceholder API collector included as template' : ''
 
     const dbConfig = database === 'postgresql' ? 'PostgreSQL' : 'SQLite'
     const storageConfig = storage === 'local'
