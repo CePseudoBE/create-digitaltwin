@@ -89,7 +89,7 @@ async function getLatestDigitalTwinCliVersion(): Promise<string> {
         return data.version
     } catch (error) {
         console.warn('Warning: Could not fetch digitaltwin-cli version from npm, falling back to default')
-        return '0.1.0' // fallback version
+        return '0.3.0' // fallback version
     }
 }
 
@@ -110,7 +110,6 @@ async function generatePackageJson(projectPath: string, answers: ProjectAnswers)
     const dependencies: PackageJsonDependencies = {
         'digitaltwin-core': `^${digitalTwinVersion}`,
         'knex': '^3.0.0',
-        'commander': '^12.0.0',
         'dotenv' : '^17.2.1'
     }
 
@@ -729,25 +728,14 @@ ${database === 'postgresql' || useRedis ? `${(database === 'postgresql' && useRe
 
 /**
  * Generates dt.js CLI wrapper that calls digitaltwin-cli
- * 
+ *
  * @param projectPath - Target directory for the project
  * @private
  */
 async function generateDtCli(projectPath: string): Promise<void> {
     const dtCliContent = `#!/usr/bin/env node
 
-import { spawn } from 'child_process'
-
-// Call digitaltwin-cli with all arguments
-const args = process.argv.slice(2)
-const child = spawn('npx', ['digitaltwin-cli', ...args], { 
-  stdio: 'inherit',
-  cwd: process.cwd()
-})
-
-child.on('exit', (code) => {
-  process.exit(code || 0)
-})
+import 'digitaltwin-cli/bin/dt.js'
 `
 
     await fs.writeFile(path.join(projectPath, 'dt.js'), dtCliContent)
